@@ -1,0 +1,38 @@
+root,code,description
+null,GENDERS,Géneros
+GENDERS,M,Mujer
+GENDERS,H,Hombre
+null,STATES_MX,Estados de México
+STATES_MX,AS,Aguascalientes
+STATES_MX,BC,Baja California
+STATES_MX,BS,Baja California Sur
+STATES_MX,CC,Campeche
+STATES_MX,CL,Coahuila de Zaragoza
+STATES_MX,CM,Colima
+STATES_MX,CS,Chiapas
+STATES_MX,CH,Chihuahua
+STATES_MX,DF,Ciudad de México
+STATES_MX,DG,Durango
+STATES_MX,GT,Guanajuato
+STATES_MX,GR,Guerrero
+STATES_MX,HG,Hidalgo
+STATES_MX,JC,Jalisco
+STATES_MX,MC,Estado de México
+STATES_MX,MN,Michoacan de Ocampo
+STATES_MX,MS,Morelos
+STATES_MX,NT,Nayarit
+STATES_MX,NL,Nuevo León
+STATES_MX,OC,Oaxaca
+STATES_MX,PL,Puebla
+STATES_MX,QT,Querétaro
+STATES_MX,QR,Quintana Roo
+STATES_MX,SP,San Luis Potosí
+STATES_MX,SL,Sinaloa
+STATES_MX,SR,Sonora
+STATES_MX,TC,Tabasco
+STATES_MX,TS,Tamaulipas
+STATES_MX,TL,Tlaxcala
+STATES_MX,VZ,Veracruz
+STATES_MX,YN,Yucatán
+STATES_MX,ZS,Zacatecas
+STATES_MX,NE,Nacido en el extranjero

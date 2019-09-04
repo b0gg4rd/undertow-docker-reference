@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <RollingRandomAccessFile name="rolling-random-access-file"
+                             fileName="${project.build.logDirectory}/${project.build.finalName}.log"
+                             filePattern="${project.build.logDirectory}/${project.build.finalName}-%d{yyyy-MM-dd}-%i.log.gz"
+                             immediateFlush="true">
+      <PatternLayout>
+        <Pattern>%d [%X{X-Trace-Id}] %p %c{1} [%t] %m %ex%n</Pattern>
+      </PatternLayout>
+      <Policies>
+        <CronTriggeringPolicy schedule="0 0 3 * * ?" />
+      </Policies>
+    </RollingRandomAccessFile>
+  </Appenders>
+  <Loggers>
+    <Logger name="${project.groupId}" level="${logger.app.level}" includeLocation="false" additivity="false">
+      <AppenderRef ref="rolling-random-access-file" />
+    </Logger>
+    <Root level="${logger.root.level}" includeLocation="false">
+      <AppenderRef ref="rolling-random-access-file" />
+    </Root>
+  </Loggers>
+</Configuration>
