@@ -29,7 +29,7 @@
       <column name="gender" type="varchar(50)">
         <constraints nullable="true" />
       </column>
-      <column name="birdthday" type="date">
+      <column name="birthday" type="date">
         <constraints nullable="true" />
       </column>
     </createTable>

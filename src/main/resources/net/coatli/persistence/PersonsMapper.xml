@@ -5,12 +5,27 @@
 
 <mapper namespace="net.coatli.persistence.PersonsMapper">
 
-  <resultMap id="retrieveResultMap" type="Person">
-    <result property="key"      javaType="string"  column="id"       jdbcType="VARCHAR" />
-    <result property="name"     javaType="string"  column="name"     jdbcType="VARCHAR" />
-    <result property="birthday" javaType="long"    column="birthday" jdbcType="DATE"    />
-    <result property="age"      javaType="integer" column="age"      jdbcType="INTEGER" />
+  <resultMap id="retrieveAllResultMap" type="Person">
+    <result property="id"            javaType="string"  column="id"             jdbcType="VARCHAR" />
+    <result property="curp"          javaType="string"  column="curp"           jdbcType="VARCHAR" />
+    <result property="names"         javaType="string"  column="names"          jdbcType="VARCHAR" />
+    <result property="firstSurname"  javaType="string"  column="first_surname"  jdbcType="VARCHAR" />
+    <result property="secondSurname" javaType="string"  column="second_surname" jdbcType="VARCHAR" />
+    <result property="birthday"      javaType="date"    column="birthday"       jdbcType="DATE"    />
   </resultMap>
+
+  <select id="retrieveAll"
+          resultMap="retrieveAllResultMap">
+    SELECT
+      id,
+      curp,
+      names,
+      first_surname,
+      second_surname,
+      birthday
+    FROM
+      persons
+  </select>
 
   <insert id="create"
           parameterType="Person">
@@ -31,34 +46,8 @@
       #{names,         mode=IN, javaType=String,  jdbcType=VARCHAR},
       #{firstSurname,  mode=IN, javaType=String,  jdbcType=VARCHAR},
       #{secondSurname, mode=IN, javaType=String,  jdbcType=VARCHAR},
-      #{birthday,      mode=IN, javaType=Long,    jdbcType=DATE}
+      #{birthday,      mode=IN, javaType=Date,    jdbcType=DATE}
     )
   </insert>
-
-  <select id="retrieve"
-          parameterType="string"
-          resultMap="retrieveResultMap">
-    SELECT
-      id,
-      name,
-      birthday,
-      age
-    FROM
-      person
-    WHERE
-      id = #{key, mode=IN, javaType=String, jdbcType=VARCHAR}
-  </select>
-
-  <select id="findBy"
-          parameterType="FindByPersonsEvent"
-          resultMap="retrieveResultMap">
-    SELECT
-      id,
-      name,
-      birthday,
-      age
-    FROM
-      person
-  </select>
 
 </mapper>

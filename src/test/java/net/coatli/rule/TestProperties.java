@@ -1,10 +1,8 @@
-package com.chaintity.rule;
+package net.coatli.rule;
 
 import static java.lang.String.format;
 
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -27,8 +25,6 @@ public class TestProperties extends ExternalResource {
       this.props = new Properties();
       this.props.load(inputStream);
     }
-
-    props.put("xtimelocal", new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss Z").format(Calendar.getInstance().getTime()));
 
     LOGGER.info(format("test.properties '%s'", props));
 

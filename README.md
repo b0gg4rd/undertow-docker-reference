@@ -1,4 +1,4 @@
-# Undertow - Project Reference
+# Undertow - Docker Reference
 
 A project reference for **Undertow** with **Docker** implementing a microservice.
 
