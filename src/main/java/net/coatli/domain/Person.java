@@ -6,8 +6,8 @@ import java.util.Date;
 
 public class Person {
 
-  private String  id;
-  private String  curp;
+  private String id;
+  private String curp;
   private String names;
   private String firstSurname;
   private String secondSurname;

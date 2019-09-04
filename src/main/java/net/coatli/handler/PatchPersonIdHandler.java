@@ -63,10 +63,11 @@ public class PatchPersonIdHandler implements HttpHandler {
       String result = "";
 
       // request body reading block
-      exchange.startBlocking();
       final StringBuilder stringBuilder = new StringBuilder();
-      String line = null;
+      String line   = null;
       Person person = null;
+
+      exchange.startBlocking();
 
       try (final BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getInputStream()))) {
         while ((line = reader.readLine()) != null) {
