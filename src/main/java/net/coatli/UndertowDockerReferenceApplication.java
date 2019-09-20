@@ -6,19 +6,21 @@ import static io.undertow.util.Methods.POST;
 import static java.lang.Integer.parseInt;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
 
-import java.io.InputStream;
 import java.util.Properties;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xnio.Options;
 
 import io.undertow.Handlers;
 import io.undertow.Undertow;
 import io.undertow.UndertowOptions;
 import io.undertow.server.HttpHandler;
-import net.coatli.handler.GetPersonIdHandler;
 import net.coatli.handler.GetPersonsHandler;
-import net.coatli.handler.PatchPersonIdHandler;
+import net.coatli.handler.GetPersonsIdHandler;
+import net.coatli.handler.PatchPersonsIdHandler;
 import net.coatli.handler.PostPersonsHandler;
+import net.coatli.handler.TraceHandler;
 
 /**
  * Main class for the self-package application
@@ -36,19 +38,19 @@ public class UndertowDockerReferenceApplication {
   private static final int    BACKLOG        = 10000;
   private static final int    WORKER_THREADS = IO_THREADS * 2;
 
+  private static final Logger LOGGER = LogManager.getLogger(UndertowDockerReferenceApplication.class);
+
   public static void main(final String[] args) throws Exception {
 
-    try (InputStream inputStream = UndertowDockerReferenceApplication.class
-                                                                         .getResourceAsStream(APPLICATION_PROPERTIES)) {
+    try (final var inputStream = UndertowDockerReferenceApplication.class.getResourceAsStream(APPLICATION_PROPERTIES)) {
 
       APPLICATION.load(inputStream);
 
       sqlSessionFactory();
 
       Undertow.builder()
-          .addHttpListener(
-              parseInt(APPLICATION.getProperty(PORT)),
-              APPLICATION.getProperty(HOST))
+          .addHttpListener(parseInt(APPLICATION.getProperty(PORT)),
+                           APPLICATION.getProperty(HOST))
           .setBufferSize(BUFFER_SIZE)
           .setIoThreads(IO_THREADS)
           .setWorkerThreads(WORKER_THREADS)
@@ -61,6 +63,10 @@ public class UndertowDockerReferenceApplication {
         .start();
     }
 
+    LOGGER.info("{} started for interface {} and port {}", UndertowDockerReferenceApplication.class.getSimpleName(),
+                                                           APPLICATION.getProperty(HOST),
+                                                           APPLICATION.getProperty(PORT));
+
   }
 
   /**
@@ -70,10 +76,10 @@ public class UndertowDockerReferenceApplication {
    */
   private static HttpHandler routes() {
     return Handlers.routing()
-        .add(GET  , "/api/v1/persons",            new GetPersonsHandler())
-        .add(POST , "/api/v1/persons",            new PostPersonsHandler())
-        .add(GET  , "/api/v1/persons/{personId}", new GetPersonIdHandler())
-        .add(PATCH, "/api/v1/persons/{personId}", new PatchPersonIdHandler());
+        .add(GET  , "/api/v1/persons",            new TraceHandler(new GetPersonsHandler()))
+        .add(POST , "/api/v1/persons",            new TraceHandler(new PostPersonsHandler()))
+        .add(GET  , "/api/v1/persons/{personId}", new TraceHandler(new GetPersonsIdHandler()))
+        .add(PATCH, "/api/v1/persons/{personId}", new TraceHandler(new PatchPersonsIdHandler()));
   }
 
 }

@@ -1,28 +1,26 @@
 package net.coatli.handler;
 
-import static com.jsoniter.output.JsonStream.serialize;
+import static com.jsoniter.JsonIterator.deserialize;
 import static io.undertow.util.Headers.CONTENT_TYPE;
 import static io.undertow.util.StatusCodes.BAD_REQUEST;
 import static io.undertow.util.StatusCodes.INTERNAL_SERVER_ERROR;
-import static io.undertow.util.StatusCodes.NOT_FOUND;
-import static io.undertow.util.StatusCodes.OK;
+import static io.undertow.util.StatusCodes.NO_CONTENT;
+import static io.undertow.util.StatusCodes.UNPROCESSABLE_ENTITY;
 import static java.lang.String.format;
-import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
-import static net.coatli.util.PersonsHeaders.APPLICATION_JSON;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
 import static net.coatli.util.PersonsHeaders.TRACE_HEADER;
-import static net.coatli.util.PersonsQueryParams.PERSON_ID;
+import static net.coatli.util.PersonsRequestBody.invalidPersonUpdate;
 import static net.coatli.util.PersonsResponses.INTERNAL_SERVER_ERROR_MESSAGE;
 import static org.apache.logging.log4j.ThreadContext.put;
 
-import java.util.Deque;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +30,9 @@ import io.undertow.util.StatusCodes;
 import net.coatli.domain.Person;
 import net.coatli.persistence.PersonsMapper;
 
-public class GetPersonIdHandler implements HttpHandler {
+public class PatchPersonsIdHandler implements HttpHandler {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GetPersonsHandler.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(PatchPersonsIdHandler.class);
 
   private static final int CORE_POOL_SIZE          = 8;
   private static final int MAXIMUM_POOL_SIZE       = 16;
@@ -49,53 +47,68 @@ public class GetPersonIdHandler implements HttpHandler {
                                               new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_CAPACITY),
                                               new ThreadPoolExecutor.CallerRunsPolicy());
 
-  /**
-   * {@inheritDoc}
-   */
   @Override
   public void handleRequest(final HttpServerExchange exchange) throws Exception {
 
     exchange.dispatch(EXECUTOR, () -> {
 
-      final String traceId = randomUUID().toString();
+      final var traceHeader = exchange.getRequestHeaders().getLast(TRACE_HEADER);
 
-      put(TRACE_HEADER, traceId);
+      put(TRACE_HEADER, traceHeader);
 
       exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 
-      String result = "";
+      var result = "";
 
-      // validations over request query or path parameters
-      final Deque<String> personId = exchange.getQueryParameters().get(PERSON_ID);
-      if (personId == null || personId.getLast().trim().isEmpty()) {
-        result = format("The path variable '%s' is required.", PERSON_ID);
-        LOGGER.info("Return '{}' '{}'", BAD_REQUEST, result);
-        exchange.setStatusCode(BAD_REQUEST)
-                .getResponseSender().send(result);
-      }
+      // request body reading block
+      final var stringBuilder = new StringBuilder();
+      var line   = "";
+      var person = new Person();
 
-      // microservice logic block
-      try (final SqlSession sqlSession = sqlSessionFactory().openSession(true)) {
+      exchange.startBlocking();
 
-        LOGGER.info("Retrive person '{}'", personId.getLast());
+      try (final var bufferedReader = new BufferedReader(new InputStreamReader(exchange.getInputStream()))) {
+        while ((line = bufferedReader.readLine()) != null) {
+          stringBuilder.append(line);
+        }
 
-        final Person person = sqlSession.getMapper(PersonsMapper.class).retrieveOne(personId.getLast());
-
-        if (person == null) {
-          LOGGER.info("Return '{}' '{}'", NOT_FOUND, personId);
-          exchange.setStatusCode(NOT_FOUND)
-                  .endExchange();
+        if (stringBuilder.toString().isBlank()) {
+          result = "Empty body, please read the OpenAPI";
+          LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, stringBuilder.toString(), result);
+          exchange.setStatusCode(BAD_REQUEST)
+                  .getResponseSender().send(result);
           return ;
         }
 
-        result = serialize(person);
-        LOGGER.info("Return '{}' '{}'", OK, result);
-        exchange.getResponseHeaders().put(CONTENT_TYPE, APPLICATION_JSON);
-        exchange.setStatusCode(OK)
-                .getResponseSender().send(result);
+        person = deserialize(stringBuilder.toString(), Person.class);
+
+        if (invalidPersonUpdate(person)) {
+          result = "Invalid body, please read the OpenAPI";
+          LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, person, result);
+          exchange.setStatusCode(BAD_REQUEST)
+                  .getResponseSender().send(result);
+          return ;
+        }
 
       } catch (final Exception exc) {
-        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+        result = "Unprocessable body, please read the OpenAPI";
+        LOGGER.error(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
+        exchange.setStatusCode(UNPROCESSABLE_ENTITY)
+                .getResponseSender().send(result);
+        return ;
+      }
+
+      // microservice logic block
+      try (final var sqlSession = sqlSessionFactory().openSession(true)) {
+
+        LOGGER.info("Updating person '{}'", person);
+
+        sqlSession.getMapper(PersonsMapper.class).update(person);
+        exchange.setStatusCode(NO_CONTENT)
+                .endExchange();
+
+      } catch (final Exception exc) {
+        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceHeader);
         LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
         exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
                 .getResponseSender().send(result);

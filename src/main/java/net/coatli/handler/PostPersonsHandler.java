@@ -9,6 +9,7 @@ import static io.undertow.util.StatusCodes.UNPROCESSABLE_ENTITY;
 import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static net.coatli.config.MyBatis.sqlSessionFactory;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
 import static net.coatli.util.PersonsHeaders.TRACE_HEADER;
 import static net.coatli.util.PersonsHeaders.X_PERSON_ID;
@@ -23,13 +24,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
-import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import net.coatli.config.MyBatis;
 import net.coatli.domain.Person;
 import net.coatli.persistence.PersonsMapper;
 
@@ -55,27 +54,27 @@ public class PostPersonsHandler implements HttpHandler {
 
     exchange.dispatch(EXECUTOR, () -> {
 
-      final String traceId = randomUUID().toString();
+      final var traceHeader = exchange.getRequestHeaders().getLast(TRACE_HEADER);
 
-      put(TRACE_HEADER, traceId);
+      put(TRACE_HEADER, traceHeader);
 
       exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 
-      String result = "";
+      var result = "";
 
       // request body reading block
-      final StringBuilder stringBuilder = new StringBuilder();
-      String line   = null;
-      Person person = null;
+      final var stringBuilder = new StringBuilder();
+      var line   = "";
+      var person = new Person();
 
       exchange.startBlocking();
 
-      try (final BufferedReader reader = new BufferedReader(new InputStreamReader(exchange.getInputStream()))) {
-        while ((line = reader.readLine()) != null) {
+      try (final var bufferedReader = new BufferedReader(new InputStreamReader(exchange.getInputStream()))) {
+        while ((line = bufferedReader.readLine()) != null) {
           stringBuilder.append(line);
         }
 
-        if (stringBuilder.toString().trim().isEmpty()) {
+        if (stringBuilder.toString().isBlank()) {
           result = "Empty body, please read the OpenAPI";
           LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, stringBuilder.toString(), result);
           exchange.setStatusCode(BAD_REQUEST)
@@ -102,7 +101,7 @@ public class PostPersonsHandler implements HttpHandler {
       }
 
       // microservice logic block
-      try (final SqlSession sqlSession = MyBatis.sqlSessionFactory().openSession(true)) {
+      try (final var sqlSession = sqlSessionFactory().openSession(true)) {
 
         LOGGER.info("Creating person '{}'", person.setId(randomUUID().toString()));
 
@@ -114,7 +113,7 @@ public class PostPersonsHandler implements HttpHandler {
                 .endExchange();
 
       } catch (final Exception exc) {
-        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceHeader);
         LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
         exchange.setStatusCode(INTERNAL_SERVER_ERROR)
                 .getResponseSender().send(result);

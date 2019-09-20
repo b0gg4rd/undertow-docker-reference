@@ -2,8 +2,6 @@ package net.coatli.domain;
 
 import static com.jsoniter.output.JsonStream.serialize;
 
-import java.util.Date;
-
 public class Person {
 
   private String id;
@@ -12,7 +10,7 @@ public class Person {
   private String firstSurname;
   private String secondSurname;
   private String gender;
-  private Date   birthday;
+  private String birthday;
 
   public Person() {
   }
@@ -77,11 +75,11 @@ public class Person {
     return this;
   }
 
-  public Date getBirthday() {
+  public String getBirthday() {
     return birthday;
   }
 
-  public Person setBirthday(final Date birthday) {
+  public Person setBirthday(final String birthday) {
     this.birthday = birthday;
 
     return this;
