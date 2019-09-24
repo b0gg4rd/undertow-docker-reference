@@ -2,7 +2,6 @@ package net.coatli.rule;
 
 import static java.lang.String.format;
 
-import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -21,7 +20,7 @@ public class TestProperties extends ExternalResource {
   @Override
   protected void before() throws Throwable {
 
-    try (InputStream inputStream = TestProperties.class.getResourceAsStream("/conf/test.properties")) {
+    try (final var inputStream = TestProperties.class.getResourceAsStream("/conf/test.properties")) {
       this.props = new Properties();
       this.props.load(inputStream);
     }

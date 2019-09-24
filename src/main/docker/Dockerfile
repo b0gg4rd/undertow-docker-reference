@@ -1,9 +1,19 @@
-FROM openjdk:8u201-jre-alpine
+FROM openjdk:11.0.4-jre-slim
 
-RUN mkdir -p ${project.build.installDirectory}
+ENV INSTALL_DIRECTORY ${project.build.installDirectory}
+ENV LOG_DIRECTORY ${project.build.logDirectory}
 
-COPY artifact/${project.build.finalName}.${project.packaging} ${project.build.installDirectory}
+RUN mkdir -p $INSTALL_DIRECTORY $LOG_DIRECTORY && \
+    groupadd coatli && \
+    useradd -l -g coatli coatli && \
+    chown -R coatli: $INSTALL_DIRECTORY $LOG_DIRECTORY
 
-ENTRYPOINT ["java","-Duser.timezone=America/Mexico_City","-jar","${project.build.installDirectory}/${project.build.finalName}.${project.packaging}"]
+WORKDIR $INSTALL_DIRECTORY
+
+USER coatli
+
+COPY artifact/${project.build.finalName}.${project.packaging} .
+
+ENTRYPOINT ["java","-Duser.timezone=America/Mexico_City","-jar","${project.build.finalName}.${project.packaging}"]
 
 EXPOSE ${application.port}

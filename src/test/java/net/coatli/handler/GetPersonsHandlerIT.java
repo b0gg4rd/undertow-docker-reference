@@ -1,12 +1,14 @@
 package net.coatli.handler;
 
+import static java.net.HttpURLConnection.HTTP_OK;
+import static java.net.http.HttpClient.newHttpClient;
+import static java.net.http.HttpRequest.newBuilder;
+import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.junit.Assert.assertEquals;
 
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+import java.net.URI;
+import java.net.http.HttpClient;
+
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -19,18 +21,18 @@ public class GetPersonsHandlerIT {
 
   private final String url = TEST_PROPERTIES.props().getProperty("get.persons.test.url");
 
-  private final CloseableHttpClient httpClient = HttpClients.createDefault();
+  private final HttpClient client = newHttpClient();
 
   @Test
   public void thatGetPersonsReturn200Works() throws Exception {
     // given
-    final HttpGet request = new HttpGet(url);
+    final var request = newBuilder(URI.create(url)).GET().build();
 
     // when
-    final CloseableHttpResponse response = httpClient.execute(request);
+    final var response = client.send(request, ofString());
 
     // then
-    assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
+    assertEquals(HTTP_OK, response.statusCode());
   }
 
 }

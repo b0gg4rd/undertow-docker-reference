@@ -11,7 +11,7 @@ import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
-import static net.coatli.util.PersonsHeaders.TRACE_HEADER;
+import static net.coatli.util.PersonsHeaders.TRACE_ID;
 import static net.coatli.util.PersonsHeaders.X_PERSON_ID;
 import static net.coatli.util.PersonsHeaders.X_PERSON_ID_HTTPSTRING;
 import static net.coatli.util.PersonsRequestBody.invalidPersonCreate;
@@ -54,58 +54,62 @@ public class PostPersonsHandler implements HttpHandler {
 
     exchange.dispatch(EXECUTOR, () -> {
 
-      final var traceHeader = exchange.getRequestHeaders().getLast(TRACE_HEADER);
+      var traceId = "";
+      var result  = "";
 
-      put(TRACE_HEADER, traceHeader);
+      try {
 
-      exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
+        traceId = exchange.getRequestHeaders().getLast(TRACE_ID);
 
-      var result = "";
+        put(TRACE_ID, traceId);
 
-      // request body reading block
-      final var stringBuilder = new StringBuilder();
-      var line   = "";
-      var person = new Person();
+        exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 
-      exchange.startBlocking();
+        // request body reading block
+        final var stringBuilder = new StringBuilder();
+        var line   = "";
+        var person = new Person();
 
-      try (final var bufferedReader = new BufferedReader(new InputStreamReader(exchange.getInputStream()))) {
-        while ((line = bufferedReader.readLine()) != null) {
-          stringBuilder.append(line);
-        }
+        exchange.startBlocking();
 
-        if (stringBuilder.toString().isBlank()) {
-          result = "Empty body, please read the OpenAPI";
-          LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, stringBuilder.toString(), result);
-          exchange.setStatusCode(BAD_REQUEST)
+        try (final var bufferedReader = new BufferedReader(new InputStreamReader(exchange.getInputStream()))) {
+          while ((line = bufferedReader.readLine()) != null) {
+            stringBuilder.append(line);
+          }
+
+          if (stringBuilder.toString().isBlank()) {
+            result = "Empty body, please read the OpenAPI";
+            LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, stringBuilder.toString(), result);
+            exchange.setStatusCode(BAD_REQUEST)
+                    .getResponseSender().send(result);
+            return ;
+          }
+
+          person = deserialize(stringBuilder.toString(), Person.class);
+
+          if (invalidPersonCreate(person)) {
+            result = "Invalid body, please read the OpenAPI";
+            LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, person, result);
+            exchange.setStatusCode(BAD_REQUEST)
+                    .getResponseSender().send(result);
+            return ;
+          }
+
+        } catch (final Exception exc) {
+          result = "Unprocessable body, please read the OpenAPI";
+          LOGGER.error(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
+          exchange.setStatusCode(UNPROCESSABLE_ENTITY)
                   .getResponseSender().send(result);
           return ;
         }
-
-        person = deserialize(stringBuilder.toString(), Person.class);
-
-        if (invalidPersonCreate(person)) {
-          result = "Invalid body, please read the OpenAPI";
-          LOGGER.info("Return '{}' '{}' '{}'", BAD_REQUEST, person, result);
-          exchange.setStatusCode(BAD_REQUEST)
-                  .getResponseSender().send(result);
-          return ;
-        }
-
-      } catch (final Exception exc) {
-        result = "Unprocessable body, please read the OpenAPI";
-        LOGGER.error(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
-        exchange.setStatusCode(UNPROCESSABLE_ENTITY)
-                .getResponseSender().send(result);
-        return ;
-      }
-
-      // microservice logic block
-      try (final var sqlSession = sqlSessionFactory().openSession(true)) {
 
         LOGGER.info("Creating person '{}'", person.setId(randomUUID().toString()));
 
-        sqlSession.getMapper(PersonsMapper.class).create(person);
+        try (final var sqlSession = sqlSessionFactory().openSession(true)) {
+
+          sqlSession.getMapper(PersonsMapper.class).create(person);
+
+        }
 
         LOGGER.info("Return '{}' '{}' '{}'", CREATED, X_PERSON_ID, person.getId());
         exchange.getResponseHeaders().put(X_PERSON_ID_HTTPSTRING, person.getId());
@@ -113,7 +117,7 @@ public class PostPersonsHandler implements HttpHandler {
                 .endExchange();
 
       } catch (final Exception exc) {
-        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceHeader);
+        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
         LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
         exchange.setStatusCode(INTERNAL_SERVER_ERROR)
                 .getResponseSender().send(result);

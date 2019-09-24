@@ -6,8 +6,8 @@ import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
-import static net.coatli.util.PersonsHeaders.TRACE_HEADER;
-import static net.coatli.util.PersonsHeaders.TRACE_HEADER_HTTPSTRING;
+import static net.coatli.util.PersonsHeaders.TRACE_ID;
+import static net.coatli.util.PersonsHeaders.TRACE_ID_HTTPSTRING;
 import static net.coatli.util.PersonsResponses.INTERNAL_SERVER_ERROR_MESSAGE;
 
 import java.util.concurrent.ExecutorService;
@@ -56,25 +56,27 @@ public class TraceHandler implements HttpHandler {
 
     exchange.dispatch(EXECUTOR, () -> {
 
-      exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
+      var traceId = "";
+      var result  = "";
 
-      // validating
-      var traceHeader = exchange.getRequestHeaders().getLast(TRACE_HEADER);
-
-      if (traceHeader == null || traceHeader.isBlank()) {
-        traceHeader = randomUUID().toString();
-        exchange.getRequestHeaders().put(TRACE_HEADER_HTTPSTRING, traceHeader);
-      }
-
-      LOGGER.info("Trace header '{}'", traceHeader);
-
-      // next handler
       try {
+
+        exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
+
+        // validating
+        traceId = exchange.getRequestHeaders().getLast(TRACE_ID);
+
+        if (traceId == null || traceId.isBlank()) {
+          traceId = randomUUID().toString();
+          exchange.getRequestHeaders().put(TRACE_ID_HTTPSTRING, traceId);
+        }
+
+        LOGGER.info("{} '{}'", TRACE_ID, traceId);
 
         next.handleRequest(exchange);
 
       } catch (final Exception exc) {
-        final String result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceHeader);
+        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
         LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
         exchange.setStatusCode(INTERNAL_SERVER_ERROR)
                 .getResponseSender().send(result);

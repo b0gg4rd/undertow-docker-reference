@@ -9,7 +9,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
 import static net.coatli.util.PersonsHeaders.APPLICATION_JSON;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
-import static net.coatli.util.PersonsHeaders.TRACE_HEADER;
+import static net.coatli.util.PersonsHeaders.TRACE_ID;
 import static net.coatli.util.PersonsResponses.INTERNAL_SERVER_ERROR_MESSAGE;
 import static org.apache.logging.log4j.ThreadContext.put;
 
@@ -49,20 +49,24 @@ public class GetPersonsHandler implements HttpHandler {
 
     exchange.dispatch(EXECUTOR, () -> {
 
-      final var traceHeader = exchange.getRequestHeaders().getLast(TRACE_HEADER);
+      var traceId = "";
+      var result  = "";
 
-      put(TRACE_HEADER, traceHeader);
+      try {
 
-      exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
+        traceId = exchange.getRequestHeaders().getLast(TRACE_ID);
 
-      var result = "";
+        put(TRACE_ID, traceId);
 
-      // microservice logic block
-      try (final var sqlSession = sqlSessionFactory().openSession(true)) {
+        exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 
         LOGGER.info("Retrieve all persons");
 
-        result = serialize(sqlSession.getMapper(PersonsMapper.class).retrieveAll());
+        try (final var sqlSession = sqlSessionFactory().openSession(true)) {
+
+          result = serialize(sqlSession.getMapper(PersonsMapper.class).retrieveAll());
+
+        }
 
         LOGGER.info("Return '{}' '{}'", OK, result);
         exchange.getResponseHeaders().put(CONTENT_TYPE, APPLICATION_JSON);
@@ -70,7 +74,7 @@ public class GetPersonsHandler implements HttpHandler {
                 .getResponseSender().send(result);
 
       } catch (final Exception exc) {
-        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceHeader);
+        result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
         LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
         exchange.setStatusCode(INTERNAL_SERVER_ERROR)
                 .getResponseSender().send(result);

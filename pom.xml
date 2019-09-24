@@ -43,7 +43,7 @@
     <maven.failsafe.plugin.version>2.22.1</maven.failsafe.plugin.version>
     <docker.maven.plugin.version>0.31.0</docker.maven.plugin.version>
 
-    <undertow.core.version>2.0.20.Final</undertow.core.version>
+    <undertow.core.version>2.0.26.Final</undertow.core.version>
     <log4j.version>2.11.2</log4j.version>
     <jsoniter.version>0.9.23</jsoniter.version>
     <javassist.version>3.24.1-GA</javassist.version>
@@ -52,7 +52,6 @@
     <hsqldb.version>2.5.0</hsqldb.version>
 
     <junit.version>4.12</junit.version>
-    <httpclient.version>4.5.3</httpclient.version>
 
     <liquibase.logging>info</liquibase.logging>
     <liquibase.dropFirst>false</liquibase.dropFirst>
@@ -116,12 +115,6 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <version>${httpclient.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

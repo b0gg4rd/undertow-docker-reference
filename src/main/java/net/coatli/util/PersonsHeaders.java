@@ -10,8 +10,8 @@ public final class PersonsHeaders {
   public static final String APPLICATION_JSON      = "application/json";
   public static final String APPLICATION_JSON_UTF8 = "application/json; charset=utf-8";
 
-  public static final String     TRACE_HEADER            = "X-Trace-Id";
-  public static final HttpString TRACE_HEADER_HTTPSTRING = new HttpString(TRACE_HEADER);
+  public static final String     TRACE_ID            = "X-Trace-Id";
+  public static final HttpString TRACE_ID_HTTPSTRING = new HttpString(TRACE_ID);
 
   public static final String     X_PERSON_ID            = "X-Person-Id";
   public static final HttpString X_PERSON_ID_HTTPSTRING = new HttpString(X_PERSON_ID);
