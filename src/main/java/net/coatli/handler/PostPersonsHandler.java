@@ -10,6 +10,7 @@ import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
+import static net.coatli.rest.renapo.CurpRestClient.retrieveDetails;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
 import static net.coatli.util.PersonsHeaders.TRACE_ID;
 import static net.coatli.util.PersonsHeaders.X_PERSON_ID;
@@ -24,11 +25,13 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.StatusCodes;
 import net.coatli.domain.Person;
 import net.coatli.persistence.PersonsMapper;
 
@@ -97,18 +100,59 @@ public class PostPersonsHandler implements HttpHandler {
 
         } catch (final Exception exc) {
           result = "Unprocessable body, please read the OpenAPI";
-          LOGGER.error(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
+          LOGGER.info(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
           exchange.setStatusCode(UNPROCESSABLE_ENTITY)
                   .getResponseSender().send(result);
           return ;
         }
 
-        LOGGER.info("Creating person '{}'", person.setId(randomUUID().toString()));
+        final var response = retrieveDetails(person.getCurp());
 
-        try (final var sqlSession = sqlSessionFactory().openSession(true)) {
+        if (response == null) {
+          result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+          LOGGER.info("Return '{}' many rows created '{}'", INTERNAL_SERVER_ERROR, result);
+          exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+          .getResponseSender().send(result);
+        }
 
-          sqlSession.getMapper(PersonsMapper.class).create(person);
+        LOGGER.info("Creating person '{}'", person.setId(randomUUID().toString())
+                                                  .setNames(response.getNombre())
+                                                  .setFirstSurname(response.getApellidoPaterno())
+                                                  .setSecondSurname(response.getApellidoMaterno())
+                                                  .setGender(response.getSexo())
+                                                  .setBirthday(response.getFechaNacimiento()));
 
+        SqlSession sqlSession = null;
+
+        try {
+
+          sqlSession = sqlSessionFactory().openSession(false);
+
+          if (sqlSession.getMapper(PersonsMapper.class).create(person) != 1) {
+            sqlSession.rollback();
+            result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+            LOGGER.info("Return '{}' many rows created '{}'", INTERNAL_SERVER_ERROR, result);
+            exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+                    .getResponseSender().send(result);
+          }
+
+          sqlSession.commit();
+
+        } catch (final Exception exc) {
+
+          if (sqlSession != null) {
+            sqlSession.rollback();
+          }
+
+          result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+          LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
+          exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+                  .getResponseSender().send(result);
+
+        } finally {
+          if (sqlSession != null) {
+            sqlSession.close();
+          }
         }
 
         LOGGER.info("Return '{}' '{}' '{}'", CREATED, X_PERSON_ID, person.getId());

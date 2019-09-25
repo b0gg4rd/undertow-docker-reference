@@ -63,9 +63,7 @@ public class GetPersonsHandler implements HttpHandler {
         LOGGER.info("Retrieve all persons");
 
         try (final var sqlSession = sqlSessionFactory().openSession(true)) {
-
           result = serialize(sqlSession.getMapper(PersonsMapper.class).retrieveAll());
-
         }
 
         LOGGER.info("Return '{}' '{}'", OK, result);

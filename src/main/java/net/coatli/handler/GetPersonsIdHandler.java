@@ -65,9 +65,9 @@ public class GetPersonsIdHandler implements HttpHandler {
 
         exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 
-        // validations over request query or path parameters
         final var personIdVariablePath = exchange.getQueryParameters().get(PERSON_ID);
-        if (personIdVariablePath == null || personIdVariablePath.getLast().isBlank()) {
+        if (personIdVariablePath == null || personIdVariablePath.getLast() == null
+            || personIdVariablePath.getLast().isBlank()) {
           result = format("The path variable '%s' is required.", PERSON_ID);
           LOGGER.info("Return '{}' '{}'", BAD_REQUEST, result);
           exchange.setStatusCode(BAD_REQUEST)

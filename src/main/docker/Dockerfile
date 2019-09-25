@@ -4,8 +4,8 @@ ENV INSTALL_DIRECTORY ${project.build.installDirectory}
 ENV LOG_DIRECTORY ${project.build.logDirectory}
 
 RUN mkdir -p $INSTALL_DIRECTORY $LOG_DIRECTORY && \
-    groupadd coatli && \
-    useradd -l -g coatli coatli && \
+    groupadd -g 2222 coatli && \
+    useradd -l -g 2222 -u 2222 coatli && \
     chown -R coatli: $INSTALL_DIRECTORY $LOG_DIRECTORY
 
 WORKDIR $INSTALL_DIRECTORY

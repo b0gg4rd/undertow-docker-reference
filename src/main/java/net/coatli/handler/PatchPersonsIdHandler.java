@@ -11,6 +11,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
 import static net.coatli.util.PersonsHeaders.TRACE_ID;
+import static net.coatli.util.PersonsQueryParams.PERSON_ID;
 import static net.coatli.util.PersonsRequestBody.invalidPersonUpdate;
 import static net.coatli.util.PersonsResponses.INTERNAL_SERVER_ERROR_MESSAGE;
 import static org.apache.logging.log4j.ThreadContext.put;
@@ -21,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 
+import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +65,15 @@ public class PatchPersonsIdHandler implements HttpHandler {
 
         exchange.getResponseHeaders().put(CONTENT_TYPE, TEXT_PLAIN_UTF8);
 
+        final var personIdVariablePath = exchange.getQueryParameters().get(PERSON_ID);
+        if (personIdVariablePath == null || personIdVariablePath.getLast() == null
+            || personIdVariablePath.getLast().isBlank()) {
+          result = format("The path variable '%s' is required.", PERSON_ID);
+          LOGGER.info("Return '{}' '{}'", BAD_REQUEST, result);
+          exchange.setStatusCode(BAD_REQUEST)
+                  .getResponseSender().send(result);
+        }
+
         final var stringBuilder = new StringBuilder();
         var line   = "";
         var person = new Person();
@@ -94,18 +105,45 @@ public class PatchPersonsIdHandler implements HttpHandler {
 
         } catch (final Exception exc) {
           result = "Unprocessable body, please read the OpenAPI";
-          LOGGER.error(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
+          LOGGER.info(format("Return '%s' '%s' '%s'", UNPROCESSABLE_ENTITY, exc.toString(), result), exc);
           exchange.setStatusCode(UNPROCESSABLE_ENTITY)
                   .getResponseSender().send(result);
           return ;
         }
 
-        LOGGER.info("Updating person '{}'", person);
+        LOGGER.info("Updating person '{}'", person.setId(personIdVariablePath.getLast()));
 
-        try (final var sqlSession = sqlSessionFactory().openSession(true)) {
+        SqlSession sqlSession = null;
 
-          sqlSession.getMapper(PersonsMapper.class).update(person);
+        try {
 
+          sqlSession = sqlSessionFactory().openSession(false);
+
+          if (sqlSession.getMapper(PersonsMapper.class).update(person) != 1 ) {
+            sqlSession.rollback();
+            result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+            LOGGER.info("Return '{}' many rows updated '{}'", INTERNAL_SERVER_ERROR, result);
+            exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+                    .getResponseSender().send(result);
+          }
+
+          sqlSession.commit();
+
+        } catch (final Exception exc) {
+
+          if (sqlSession != null) {
+            sqlSession.rollback();
+          }
+
+          result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
+          LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
+          exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+                  .getResponseSender().send(result);
+
+        } finally {
+          if (sqlSession != null) {
+            sqlSession.close();
+          }
         }
 
         LOGGER.info("Return '{}'", NO_CONTENT);

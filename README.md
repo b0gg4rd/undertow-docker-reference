@@ -1,4 +1,4 @@
-# Undertow - Docker Reference
+# Undertow Docker Reference
 
 A project reference for **Undertow** with **Docker** implementing a microservice.
 
@@ -7,6 +7,16 @@ A project reference for **Undertow** with **Docker** implementing a microservice
   - Docker 18
 
 ## Building
+
+### Setup
+
+In both scenarios, [integration tests](#integration-tests) or [local execution](#local-execution), first setup with the following commands:
+
+#### Log directory
+
+```bash
+$ sudo mkdir -p /var/log/coatli && sudo chown 2222:2222 /var/log/coatli
+```
 
 ### Integration tests
 
@@ -27,7 +37,7 @@ $ docker run \
     ./mvnw -Djansi.force=true -P local -U clean verify
 ```
 
-### Local Execution
+### Local execution
 
 For execute the _microservice_ use:
 
