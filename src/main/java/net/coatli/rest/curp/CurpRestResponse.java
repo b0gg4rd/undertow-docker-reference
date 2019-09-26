@@ -1,4 +1,4 @@
-package net.coatli.rest.renapo;
+package net.coatli.rest.curp;
 
 import static com.jsoniter.output.JsonStream.serialize;
 

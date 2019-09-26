@@ -46,7 +46,7 @@
       #{names,         mode=IN, javaType=String,  jdbcType=VARCHAR},
       #{firstSurname,  mode=IN, javaType=String,  jdbcType=VARCHAR},
       #{secondSurname, mode=IN, javaType=String,  jdbcType=VARCHAR},
-      #{birthday,      mode=IN, javaType=Date,    jdbcType=DATE}
+      #{birthday,      mode=IN, javaType=Date,    jdbcType=DATE, typeHandler=BirthdayTypeHandler}
     )
   </insert>
 

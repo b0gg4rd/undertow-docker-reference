@@ -10,7 +10,7 @@ public final class PersonsRequestBody {
 
   public static boolean invalidPersonCreate(final Person person) {
 
-    if (person.getCurp() == null || person.getCurp().trim().isEmpty() || !person.getCurp().matches(CURP_REGEX)) {
+    if (person.getCurp() == null || person.getCurp().isBlank() || !person.getCurp().matches(CURP_REGEX)) {
       return true;
     }
 
@@ -20,7 +20,7 @@ public final class PersonsRequestBody {
 
   public static boolean invalidPersonUpdate(final Person person) {
 
-    if (person.getCurp() == null || person.getCurp().trim().isEmpty() || !person.getCurp().matches(CURP_REGEX)) {
+    if (person.getCurp() == null || person.getCurp().isBlank() || !person.getCurp().matches(CURP_REGEX)) {
       return true;
     }
 

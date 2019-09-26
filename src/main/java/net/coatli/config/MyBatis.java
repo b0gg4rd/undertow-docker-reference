@@ -16,6 +16,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import net.coatli.domain.Person;
 import net.coatli.persistence.PersonsMapper;
+import net.coatli.persistence.type.BirthdayTypeHandler;
 
 public final class MyBatis {
 
@@ -56,7 +57,10 @@ public final class MyBatis {
                           new HikariDataSource(new HikariConfig(hikariConfig))));
 
       // Aliases
-      configuration.getTypeAliasRegistry().registerAlias(Person.class.getSimpleName(), Person.class);
+      configuration.getTypeAliasRegistry().registerAlias(BirthdayTypeHandler.class.getSimpleName(),
+                                                         BirthdayTypeHandler.class);
+      configuration.getTypeAliasRegistry().registerAlias(Person.class.getSimpleName(),
+                                                         Person.class);
 
       // Mappers
       configuration.addMapper(PersonsMapper.class);

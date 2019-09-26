@@ -10,7 +10,7 @@ import static java.lang.String.format;
 import static java.util.UUID.randomUUID;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
-import static net.coatli.rest.renapo.CurpRestClient.retrieveDetails;
+import static net.coatli.rest.curp.CurpRestClient.consumeCurpDetails;
 import static net.coatli.util.PersonsHeaders.TEXT_PLAIN_UTF8;
 import static net.coatli.util.PersonsHeaders.TRACE_ID;
 import static net.coatli.util.PersonsHeaders.X_PERSON_ID;
@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.StatusCodes;
 import net.coatli.domain.Person;
 import net.coatli.persistence.PersonsMapper;
 
@@ -106,13 +105,16 @@ public class PostPersonsHandler implements HttpHandler {
           return ;
         }
 
-        final var response = retrieveDetails(person.getCurp());
+        LOGGER.info("Received '{}'", person);
+
+        final var response = consumeCurpDetails(person.getCurp());
 
         if (response == null) {
           result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
-          LOGGER.info("Return '{}' many rows created '{}'", INTERNAL_SERVER_ERROR, result);
-          exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
-          .getResponseSender().send(result);
+          LOGGER.info("Return '{}' '{}'", INTERNAL_SERVER_ERROR, result);
+          exchange.setStatusCode(INTERNAL_SERVER_ERROR)
+                  .getResponseSender().send(result);
+          return ;
         }
 
         LOGGER.info("Creating person '{}'", person.setId(randomUUID().toString())
@@ -132,11 +134,17 @@ public class PostPersonsHandler implements HttpHandler {
             sqlSession.rollback();
             result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
             LOGGER.info("Return '{}' many rows created '{}'", INTERNAL_SERVER_ERROR, result);
-            exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+            exchange.setStatusCode(INTERNAL_SERVER_ERROR)
                     .getResponseSender().send(result);
+            return ;
           }
 
           sqlSession.commit();
+
+          LOGGER.info("Return '{}' '{}' '{}'", CREATED, X_PERSON_ID, person.getId());
+          exchange.getResponseHeaders().put(X_PERSON_ID_HTTPSTRING, person.getId());
+          exchange.setStatusCode(CREATED)
+                  .endExchange();
 
         } catch (final Exception exc) {
 
@@ -146,7 +154,7 @@ public class PostPersonsHandler implements HttpHandler {
 
           result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
           LOGGER.error(format("Return '%s' '%s' '%s'", INTERNAL_SERVER_ERROR, exc.toString(), result), exc);
-          exchange.setStatusCode(StatusCodes.INTERNAL_SERVER_ERROR)
+          exchange.setStatusCode(INTERNAL_SERVER_ERROR)
                   .getResponseSender().send(result);
 
         } finally {
@@ -154,11 +162,6 @@ public class PostPersonsHandler implements HttpHandler {
             sqlSession.close();
           }
         }
-
-        LOGGER.info("Return '{}' '{}' '{}'", CREATED, X_PERSON_ID, person.getId());
-        exchange.getResponseHeaders().put(X_PERSON_ID_HTTPSTRING, person.getId());
-        exchange.setStatusCode(CREATED)
-                .endExchange();
 
       } catch (final Exception exc) {
         result = format(INTERNAL_SERVER_ERROR_MESSAGE, traceId);
