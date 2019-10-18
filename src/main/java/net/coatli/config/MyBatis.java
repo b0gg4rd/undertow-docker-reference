@@ -1,6 +1,5 @@
 package net.coatli.config;
 
-import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.ibatis.mapping.Environment;
@@ -46,15 +45,14 @@ public final class MyBatis {
 
   private static Configuration configuration() {
 
-    try (InputStream inputStream = MyBatis.class.getResourceAsStream(HIKARI_PROPERTIES)) {
+    try (final var inputStream = MyBatis.class.getResourceAsStream(HIKARI_PROPERTIES)) {
 
-      final Properties hikariConfig = new Properties();
-      hikariConfig.load(inputStream);
+      final var properties = new Properties();
+      properties.load(inputStream);
 
-      final Configuration configuration = new Configuration(
-          new Environment("production",
-                          new JdbcTransactionFactory(),
-                          new HikariDataSource(new HikariConfig(hikariConfig))));
+      final var configuration = new Configuration(new Environment("production",
+                                                                  new JdbcTransactionFactory(),
+                                                                  new HikariDataSource(new HikariConfig(properties))));
 
       // Aliases
       configuration.getTypeAliasRegistry().registerAlias(BirthdayTypeHandler.class.getSimpleName(),
@@ -66,6 +64,7 @@ public final class MyBatis {
       configuration.addMapper(PersonsMapper.class);
 
       return configuration;
+
     } catch (final Exception exc) {
       LOGGER.error("Can not create SQL Session Factory", exc);
       throw new RuntimeException(exc.toString(), exc);
