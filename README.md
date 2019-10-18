@@ -4,7 +4,7 @@ A project reference for **Undertow** with **Docker** implementing a microservice
 
 ## Requirements
 
-  - Docker 18
+  - [Docker 18](https://docs.docker.com/v18.09/install/)
 
 ## Building
 

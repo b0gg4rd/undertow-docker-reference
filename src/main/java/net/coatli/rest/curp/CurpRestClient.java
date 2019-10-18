@@ -9,6 +9,8 @@ import static java.net.http.HttpRequest.BodyPublishers.ofString;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static net.coatli.UndertowDockerReferenceApplication.APPLICATION;
 
+import net.coatli.rest.curp.domain.CurpRestRequest;
+import net.coatli.rest.curp.domain.CurpRestResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

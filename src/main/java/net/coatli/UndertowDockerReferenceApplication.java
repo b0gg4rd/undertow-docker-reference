@@ -4,6 +4,7 @@ import static io.undertow.util.Methods.GET;
 import static io.undertow.util.Methods.PATCH;
 import static io.undertow.util.Methods.POST;
 import static java.lang.Integer.parseInt;
+import static java.lang.Runtime.getRuntime;
 import static net.coatli.config.MyBatis.sqlSessionFactory;
 
 import java.util.Properties;
@@ -33,7 +34,7 @@ public class UndertowDockerReferenceApplication {
 
   private static final String HOST           = "host";
   private static final String PORT           = "port";
-  private static final int    IO_THREADS     = Runtime.getRuntime().availableProcessors() * 4;
+  private static final int    IO_THREADS     = getRuntime().availableProcessors() * 4;
   private static final int    BUFFER_SIZE    = 1024 * 64;
   private static final int    BACKLOG        = 10000;
   private static final int    WORKER_THREADS = IO_THREADS * 2;

@@ -1,4 +1,4 @@
-package net.coatli.domain;
+package net.coatli.rest.curp.domain;
 
 import static com.jsoniter.output.JsonStream.serialize;
 
@@ -12,15 +12,10 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain  = true,
            fluent = false)
-public class Person {
+public class CurpRestRequest {
 
-  private String id;
   private String curp;
-  private String names;
-  private String firstSurname;
-  private String secondSurname;
-  private String gender;
-  private String birthday;
+  private String documento;
 
   @Override
   public String toString() {
