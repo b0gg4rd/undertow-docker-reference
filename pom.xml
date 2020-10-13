@@ -55,7 +55,7 @@
 
     <lombok.version>1.18.10</lombok.version>
 
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
 
     <liquibase.logging>info</liquibase.logging>
     <liquibase.dropFirst>false</liquibase.dropFirst>
