@@ -14,27 +14,28 @@ In both scenarios, [integration tests](#integration-tests) or [local execution](
 
 #### Log directory
 
-```bash
-$ sudo mkdir -p /var/log/coatli && sudo chown 2222:2222 /var/log/coatli
+```shell
+sudo mkdir -p /var/log/coatli && \
+sudo chown 2222:2222 /var/log/coatli
 ```
 
 ### Integration tests
 
 The development cycle should consist in the creation of **integration test cases**. Use the below command to execute them:
 
-```bash
-$ docker run \
-    -u $(id -u):$(grep docker /etc/group | awk -F\: '{print $3}') \
-    --net=host \
-    --rm \
-    -w $(pwd) \
-    -v /etc/group:/etc/group:ro \
-    -v /etc/passwd:/etc/passwd:ro \
-    -v $(pwd):$(pwd) \
-    -v ${HOME}/.m2:${HOME}/.m2 \
-    -v /var/run/docker.sock:/var/run/docker.sock \
-    openjdk:11.0.4-jdk-slim \
-    ./mvnw -Djansi.force=true -P local -U clean verify
+```shell
+docker run \
+  -u $(id -u):$(grep docker /etc/group | awk -F\: '{print $3}') \
+  --net=host \
+  --rm \
+  -w $(pwd) \
+  -v /etc/group:/etc/group:ro \
+  -v /etc/passwd:/etc/passwd:ro \
+  -v $(pwd):$(pwd) \
+  -v ${HOME}/.m2:${HOME}/.m2 \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  openjdk:11.0.4-jdk-slim \
+  ./mvnw -Djansi.force=true -P local -U clean verify
 ```
 
 ### Local execution
